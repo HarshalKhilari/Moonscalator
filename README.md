@@ -1,0 +1,2 @@
+# Moonscalator
+Forecasting stock movement
