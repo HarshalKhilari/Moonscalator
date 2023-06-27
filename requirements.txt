@@ -1,9 +1,4 @@
 streamlit
-os
-sys
-math
-random
-time
 numpy
 pandas
 yfinance
@@ -18,4 +13,3 @@ pmdarima
 dateutil
 selenium
 bs4
-re
