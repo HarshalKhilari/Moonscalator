@@ -10,6 +10,5 @@ plotly
 scikit-learn
 keras
 pmdarima
-dateutil
 selenium
 bs4
