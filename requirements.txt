@@ -12,3 +12,4 @@ keras
 pmdarima
 selenium
 bs4
+tensorflow
