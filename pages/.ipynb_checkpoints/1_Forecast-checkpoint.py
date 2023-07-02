@@ -142,20 +142,18 @@ def lstm_model(y_train, y_test, forecast_days):
     
     # Build LSTM model
     model = Sequential()
-    model.add(LSTM(512, return_sequences=True, input_shape = (train_X.shape[1], 1)))
-    model.add(Dropout(0.35))
-    model.add(LSTM(128, return_sequences=True))
-    model.add(Dropout(0.3))
+    model.add(LSTM(256, return_sequences=True, input_shape = (train_X.shape[1], 1)))
+    model.add(Dropout(0.1))
     model.add(LSTM(64, return_sequences=False))
     model.add(Dropout(0.3))
-    model.add(Dense(16, activation = 'relu'))
+    model.add(Dense(8, activation = 'relu'))
     model.add(Dense(1))
     
     # Compile the model
     model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
 
     # Тrain the model
-    model.fit(train_X, train_y, batch_size=60, epochs=25)
+    model.fit(train_X, train_y, batch_size=60, epochs=50)
     
     y_test_scaled = np.concatenate([y_train_scaled[-60:], y_test_scaled], axis = 0)
     
