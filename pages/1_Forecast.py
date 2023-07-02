@@ -78,11 +78,11 @@ def auto_arima_model(y_train, y_test, forecast_days):
                      y = y_train, 
                      start_p = 1,
                      start_q = 1,
-                     max_p = 100,
-                     max_q = 100,
+                     max_p = 10,
+                     max_q = 10,
                      max_order = None,
                      seasonal=False, 
-                     stepwise=True,
+                     stepwise=False,
                      maxiter = 100,
                      suppress_warnings=True, 
                      error_action="ignore",
@@ -142,18 +142,18 @@ def lstm_model(y_train, y_test, forecast_days):
     
     # Build LSTM model
     model = Sequential()
-    model.add(LSTM(256, return_sequences=True, input_shape = (train_X.shape[1], 1)))
-    model.add(Dropout(0.1))
-    model.add(LSTM(64, return_sequences=False))
+    model.add(LSTM(128, return_sequences=True, input_shape = (train_X.shape[1], 1)))
+    model.add(Dropout(0.35))
+    model.add(LSTM(64, return_sequences=True))
     model.add(Dropout(0.3))
-    model.add(Dense(8, activation = 'relu'))
+    model.add(Dense(16, activation = 'relu'))
     model.add(Dense(1))
     
     # Compile the model
     model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
 
     # Тrain the model
-    model.fit(train_X, train_y, batch_size=60, epochs=50)
+    model.fit(train_X, train_y, batch_size=60, epochs=10)
     
     y_test_scaled = np.concatenate([y_train_scaled[-60:], y_test_scaled], axis = 0)
     
