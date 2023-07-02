@@ -201,7 +201,7 @@ def lstm_model(y_train, y_test, forecast_days):
 
 # METROPOLIS HASTINGS ALGORITHM (MARKOV CHAIN MONTE CARLO) 
 
-mu, sig, N = 0.25, 0.5, 50000
+mu, sig, N = 0.25, 0.5, 10000
 def q(x):
     return (1 / (math.sqrt(2 * math.pi * sig ** 2))) * (math.e ** (-((x - mu) ** 2) / (2 * sig ** 2)))
 
@@ -345,6 +345,8 @@ def get_forecast(hist, validation_days = 90, days_to_forecast = 30):
     forecasted_price = pd.DataFrame({'Date':fc_arima.index.strftime('%d-%m-%Y'), 'Forecasted Price':forecasted_price.astype(int)})
     forecasted_price.set_index('Date', inplace = True)
 
+
+    
     st.write(forecasted_price.style.set_properties(**{'text-align': 'center'}))
 
 

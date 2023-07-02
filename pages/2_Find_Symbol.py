@@ -91,7 +91,7 @@ st.set_page_config(page_title="Finding Ticker Symbol", page_icon="🔍")
 st.sidebar.header("Find Ticker Symbol")
 
 st.title("What's my Ticker?!")
-stock_name = st.text_input(label="Enter the stock name:", key="stock_name")
+stock_name = st.text_input(label="Enter the stock name", placeholder = "Enter the stock name here...", key="stock_name", label_visibility = 'collapsed')
 if stock_name:
     with st.spinner("Searching for symbols..."):
         suggestions = search_symbols(stock_name)
