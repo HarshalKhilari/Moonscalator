@@ -77,39 +77,35 @@ def auto_arima_model(y_train, y_test, forecast_days):
     fc_df = pd.DataFrame(columns = ['fc'], index = forecast_days)
     auto = pm.auto_arima(
                      y = y_train, 
-                     start_p = 1,
-                     start_q = 1,
-                     max_p = 10,
-                     max_q = 10,
                      max_order = None,
                      seasonal=False, 
-                     stepwise=False,
+                     stepwise=True,
                      maxiter = 100,
                      suppress_warnings=True, 
                      error_action="ignore",
-                     trace=True, 
+                     trace=True
                         )
     model = auto  # seeded from the model we've already fit
-    def validate_and_update():
+    def predict_next():
         fc = model.predict(n_periods=1, return_conf_int=False)
         return fc.tolist()[0]
     
     forecasts = []
     
     for date, price in y_test.items():
-        fc = validate_and_update()
+        fc = predict_next()
         forecasts.append(fc)
         # Updates the existing model with a small number of MLE steps
         model.update(pd.Series([price], index = [date], name = 'Close'))
     
     errors = {
-        "Mean squared error": mean_squared_error(y_test, forecasts),
+        "MSE": mean_squared_error(y_test, forecasts),
         "SMAPE": smape(y_test, forecasts),
         "DA": calculate_directional_accuracy(y_test, forecasts)
     }
     
     for new_day in fc_df.index.tolist():
-        fc = validate_and_update()
+        fc = predict_next()
         fc_df.loc[new_day, 'fc'] = fc
         model.update(pd.Series([fc], index = [new_day], name = 'Close'))
     
@@ -121,12 +117,6 @@ def auto_arima_model(y_train, y_test, forecast_days):
 def lstm_model(y_train, y_test, forecast_days):
 # Long Short-Term Memory neural network to calculate forecast
     
-    # Checking if GPU is recognized by tensorflow
-    GPUs = tf.config.list_physical_devices('GPU')
-    print(f"Number of GPUs : {len(GPUs)}")
-
-    # Setting tensorflow to not allot entire GPU memory for operations, but rather use little of its memory as and when needed
-    tf.config.experimental.set_memory_growth(GPUs[0], True)
     trainset = y_train.values
     testset = y_test.values
 
@@ -152,7 +142,7 @@ def lstm_model(y_train, y_test, forecast_days):
     model = Sequential()
     model.add(LSTM(128, return_sequences=True, input_shape = (train_X.shape[1], 1)))
     model.add(Dropout(0.35))
-    model.add(LSTM(64, return_sequences=True))
+    model.add(LSTM(64, return_sequences=False))
     model.add(Dropout(0.3))
     model.add(Dense(16, activation = 'relu'))
     model.add(Dense(1))
@@ -179,7 +169,7 @@ def lstm_model(y_train, y_test, forecast_days):
     predictions = scaler.inverse_transform(predictions)
 
     errors = {
-        "Mean squared error": mean_squared_error(y_test, predictions),
+        "MSE": mean_squared_error(y_test, predictions),
         "SMAPE": smape(y_test, predictions),
         "DA": calculate_directional_accuracy(y_test, predictions)
     }
@@ -211,7 +201,7 @@ def lstm_model(y_train, y_test, forecast_days):
 
 # METROPOLIS HASTINGS ALGORITHM (MARKOV CHAIN MONTE CARLO) 
 
-mu, sig, N = 0.25, 0.5, 10000
+mu, sig, N = 0.25, 0.5, 50000
 def q(x):
     return (1 / (math.sqrt(2 * math.pi * sig ** 2))) * (math.e ** (-((x - mu) ** 2) / (2 * sig ** 2)))
 
@@ -262,7 +252,7 @@ def MH(y_train, y_test, is_forecast = False):
     print(y_test.shape, np.array(stock_pred).shape)
     if not is_forecast:
         errors = {
-        "Mean squared error": mean_squared_error(y_test, stock_pred),
+        "MSE": mean_squared_error(y_test, stock_pred),
         "SMAPE": smape(y_test, stock_pred),
         "DA": calculate_directional_accuracy(y_test, stock_pred)
         }
@@ -330,7 +320,6 @@ def get_forecast(hist, validation_days = 90, days_to_forecast = 30):
     print("LSTM predictions",fc_lstm)
     print("ARIMA predictions",fc_arima)
     print("MCMC predictions",fc_mcmc)
-    print(fc_arima.shape, fc_lstm.shape, fc_mcmc.shape)
 
     forecasted_price=(fc_arima['fc'] + fc_lstm['fc'] + fc_mcmc['fc'])/3
     
@@ -369,7 +358,7 @@ st.set_page_config(page_title="Forecasting", page_icon="📈")
 st.sidebar.header("Forecast for the next month")
 
 st.title('Stock Price Forecast')
-symbol = st.text_input(label="Enter the stock ticker:", key="symbol")
+symbol = st.text_input(label = "Enter the stock ticker", placeholder = "Enter the stock ticker here...", key="symbol", label_visibility = 'collapsed')
 if symbol:
     with st.spinner("Fetching stock data..."):
         # Create a yfinance ticker object for user-defined symbol
