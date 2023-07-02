@@ -73,11 +73,13 @@ def calculate_directional_accuracy(actual_prices, predicted_prices):
 def auto_arima_model(y_train, y_test, forecast_days):
 # automatically computes all parameters and gives predictions
     # Creating a dataframe to store forecasts
-    fc_df = pd.DataFrame(columns = ['fc', 'conf_low', 'conf_high'], index = forecast_days)
+    fc_df = pd.DataFrame(columns = ['fc'], index = forecast_days)
     auto = pm.auto_arima(
                      y = y_train, 
                      start_p = 1,
                      start_q = 1,
+                     max_p = 100,
+                     max_q = 100,
                      max_order = None,
                      seasonal=False, 
                      stepwise=True,
@@ -85,20 +87,17 @@ def auto_arima_model(y_train, y_test, forecast_days):
                      suppress_warnings=True, 
                      error_action="ignore",
                      trace=True, 
-                     n_jobs = -1
                         )
     model = auto  # seeded from the model we've already fit
     def validate_and_update():
-        fc, conf_int = model.predict(n_periods=1, return_conf_int=True)
-        return (fc.tolist()[0], np.asarray(conf_int).tolist()[0])
+        fc = model.predict(n_periods=1, return_conf_int=False)
+        return fc.tolist()[0]
     
     forecasts = []
-    confidence_intervals = []
     
     for date, price in y_test.items():
-        fc, conf = validate_and_update()
+        fc = validate_and_update()
         forecasts.append(fc)
-        confidence_intervals.append(conf)
         # Updates the existing model with a small number of MLE steps
         model.update(pd.Series([price], index = [date], name = 'Close'))
     
@@ -108,19 +107,10 @@ def auto_arima_model(y_train, y_test, forecast_days):
         "DA": calculate_directional_accuracy(y_test, forecasts)
     }
     
-    def forecast_one_month():
-        fc, conf_int = model.predict(n_periods=fc_df.shape[0], return_conf_int=True)
-        return (
-            fc.tolist(),
-            np.asarray(conf_int).tolist())
-    
-    fc, conf = forecast_one_month()
-    i=0
     for new_day in fc_df.index.tolist():
-        fc_df.loc[new_day, 'fc'] = fc[i]
-        fc_df.loc[new_day, 'conf_low'] = conf[i][0]
-        fc_df.loc[new_day, 'conf_high'] = conf[i][1]
-        i+=1
+        fc = validate_and_update()
+        fc_df.loc[new_day, 'fc'] = fc
+        model.update(pd.Series([fc], index = [new_day], name = 'Close'))
     
     return fc_df, errors
 
@@ -152,18 +142,20 @@ def lstm_model(y_train, y_test, forecast_days):
     
     # Build LSTM model
     model = Sequential()
-    model.add(LSTM(128, return_sequences=True, input_shape = (train_X.shape[1], 1)))
+    model.add(LSTM(512, return_sequences=True, input_shape = (train_X.shape[1], 1)))
     model.add(Dropout(0.35))
+    model.add(LSTM(128, return_sequences=True))
+    model.add(Dropout(0.3))
     model.add(LSTM(64, return_sequences=False))
     model.add(Dropout(0.3))
-    model.add(Dense(25, activation = 'relu'))
+    model.add(Dense(16, activation = 'relu'))
     model.add(Dense(1))
     
     # Compile the model
     model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
 
     # Тrain the model
-    model.fit(train_X, train_y, batch_size=60, epochs=5)
+    model.fit(train_X, train_y, batch_size=60, epochs=25)
     
     y_test_scaled = np.concatenate([y_train_scaled[-60:], y_test_scaled], axis = 0)
     
@@ -213,7 +205,7 @@ def lstm_model(y_train, y_test, forecast_days):
 
 # METROPOLIS HASTINGS ALGORITHM (MARKOV CHAIN MONTE CARLO) 
 
-mu, sig, N = 0.25, 0.5, 1000
+mu, sig, N = 0.25, 0.5, 10000
 def q(x):
     return (1 / (math.sqrt(2 * math.pi * sig ** 2))) * (math.e ** (-((x - mu) ** 2) / (2 * sig ** 2)))
 
@@ -338,9 +330,9 @@ def get_forecast(hist, validation_days = 90, days_to_forecast = 30):
     
     
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=all_days.index, y=all_days.values, mode='lines+markers', name='historical'))
+    fig.add_trace(go.Scatter(x=all_days.index, y=all_days.values, mode='lines+markers', name='Historical Prices'))
     fig.add_trace(go.Scatter(x=fc_arima.index, y=forecasted_price, mode='lines+markers', 
-                             line=dict(color='#800080', width = 5), marker = dict(size = 10), name='Final Forecast'))
+                             line=dict(color='#FFB300'), marker = dict(size = 8), name='Forecast'))
     
     fig.update_layout(
                       legend_orientation="h",
