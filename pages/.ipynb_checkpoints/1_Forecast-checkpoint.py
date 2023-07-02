@@ -14,6 +14,7 @@ import plotly.graph_objs as go
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
 
+import tensorflow as tf
 from keras.layers import LSTM, Dropout, Dense
 from keras.models import Sequential
 
@@ -119,6 +120,13 @@ def auto_arima_model(y_train, y_test, forecast_days):
 
 def lstm_model(y_train, y_test, forecast_days):
 # Long Short-Term Memory neural network to calculate forecast
+    
+    # Checking if GPU is recognized by tensorflow
+    GPUs = tf.config.list_physical_devices('GPU')
+    print(f"Number of GPUs : {len(GPUs)}")
+
+    # Setting tensorflow to not allot entire GPU memory for operations, but rather use little of its memory as and when needed
+    tf.config.experimental.set_memory_growth(GPUs[0], True)
     trainset = y_train.values
     testset = y_test.values
 
