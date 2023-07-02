@@ -96,7 +96,6 @@ def auto_arima_model(y_train, y_test, forecast_days):
     confidence_intervals = []
     
     for date, price in y_test.items():
-        #new_obs = pd.Series([price], index = [date], name = 'Close')
         fc, conf = validate_and_update()
         forecasts.append(fc)
         confidence_intervals.append(conf)
