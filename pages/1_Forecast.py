@@ -1,6 +1,7 @@
-import os, sys, math, random, time
+import os, sys, math, random, time, datetime
 import numpy as np
 import pandas as pd
+import mplfinance as mpf
 import yfinance as yf
 
 from requests import Session
@@ -280,11 +281,54 @@ def MCMC_model(y_train, y_test, forecast_days):
 
 
 
+# EXPLORING DATA THROUGH PLOTS
+
+
+def plot_candlestick(data):
+
+    # Create a candlestick trace
+    trace = go.Candlestick(
+        x=data.index,
+        open=data['Open'],
+        high=data['High'],
+        low=data['Low'],
+        close=data['Close']
+    )
+
+
+    # Create a layout object
+    layout = go.Layout(
+        legend_orientation="h",
+        legend=dict(x=.5, xanchor="center"),
+        plot_bgcolor='#FFFFFF',  
+        title = "Candlestick Plot for the last year",
+        xaxis=dict(gridcolor = 'lightgrey', 
+                   type='date', 
+                   tickmode='auto', 
+                   tickformat='%d-%m-%Y', 
+                   showgrid=True),
+        yaxis=dict(gridcolor = 'lightgrey'),
+        xaxis_title="Date",
+        yaxis_title="Price",
+        margin=dict(l=0, r=0, t=30, b=0),
+        xaxis_rangeslider_visible=True
+    )       
+
+
+    # Create a figure object that contains the trace and layout
+    fig = go.Figure(data=[trace], layout=layout)
+
+    # Display the figure
+    st.plotly_chart(fig)    
+
+
+    
 # Plot Relative Strength Index
-def calculate_rsi(data, window=14):
+def plot_rsi(data, window=14):
     # Input: stock data, window
     # output: RSI
     # Function to calculate RSI using historical closing prices of a stock
+    
     close_delta = data['Close'].diff()
     up = close_delta.where(close_delta > 0, 0)
     down = -close_delta.where(close_delta < 0, 0)
@@ -298,12 +342,59 @@ def calculate_rsi(data, window=14):
 
     # Calculate the RSI
     rsi = 100 - (100 / (1 + rs))
+
+     # Create traces for the dotted lines at RSI 30 and 70
+    trace_rsi_30 = go.Scatter(
+        x=data.index,
+        y=[30] * data.shape[0],
+        mode='lines',
+        line=dict(color='green', dash='dash'),
+        name='OVERSOLD'
+    )
+
+    trace_rsi_70 = go.Scatter(
+        x=data.index,
+        y=[70] * data.shape[0],
+        mode='lines',
+        line=dict(color='red', dash='dash'),
+        name='OVERBOUGHT'
+    )
     
-    return rsi
+        # Create a scatter trace for the RSI values
+    trace = go.Scatter(
+        x=data.index,
+        y=rsi,
+        mode='lines',
+        name='RSI'
+    )
+
+
+    # Create a layout object
+    layout = go.Layout(
+        plot_bgcolor='#FFFFFF',  
+        title = "Relative Strength Index (RSI) for the last year",
+        xaxis=dict(gridcolor = 'lightgrey', 
+                   type='date', 
+                   tickmode='auto', 
+                   tickformat='%d-%m-%Y', 
+                   showgrid=True),
+        yaxis=dict(gridcolor = 'lightgrey'),
+        xaxis_title="Date",
+        yaxis_title="RSI",
+        margin=dict(l=0, r=0, t=30, b=0),
+        xaxis_rangeslider_visible=True
+    )        
+
+    # Create a figure object that contains the trace and layout
+    fig = go.Figure(data=[trace, trace_rsi_30, trace_rsi_70], layout=layout)
+
+    # Display the figure
+    st.plotly_chart(fig)
 
 
 # Define a function to calculate MACD
-def calculate_macd(data, short_period=12, long_period=26, signal_period=9):
+def plot_macd(data, short_period=12, long_period=26, signal_period=9):
+    
     # Calculate the short-term EMA
     ema_short = data['Close'].ewm(span=short_period, adjust=False).mean()
 
@@ -319,43 +410,184 @@ def calculate_macd(data, short_period=12, long_period=26, signal_period=9):
     # Calculate the MACD histogram
     macd_histogram = macd_line - signal_line
 
-    return macd_histogram
+    # Create trace for the MACD line
+    trace_macd = go.Scatter(
+        x=data.index,
+        y=macd_line,
+        mode='lines',
+        name='MACD'
+    )
+
+    # Create trace for the MACD signal line
+    trace_signal = go.Scatter(
+        x=data.index,
+        y=signal_line,
+        mode='lines',
+        name='Signal Line'
+    )
+
+    # Create trace for the MACD histogram
+    trace_histogram = go.Bar(
+        x=data.index,
+        y=macd_histogram,
+        name='Histogram',
+        marker=dict(color=[('green' if val >= 0 else 'red') for val in macd_histogram])
+    )
+
+
+    # Create a layout object
+    layout = go.Layout(
+        plot_bgcolor='#FFFFFF',  
+        title = "Moving Average Convergence Divergence (MACD) for the last year",
+        xaxis=dict(gridcolor = 'lightgrey', 
+                   type='date', 
+                   tickmode='auto', 
+                   tickformat='%d-%m-%Y', 
+                   showgrid=True),
+        yaxis=dict(gridcolor = 'lightgrey'),
+        xaxis_title="Date",
+        yaxis_title="MACD",
+        margin=dict(l=0, r=0, t=30, b=0),
+        xaxis_rangeslider_visible=True
+    )    
+
+    # Create a figure object that contains the traces and layout
+    fig = go.Figure(data=[trace_macd, trace_signal, trace_histogram], layout=layout)
+
+    # Display the figure
+    st.plotly_chart(fig)
 
 
 
-
-import mplfinance as mpf
-
-def plot_candlestick(data):
-    # Define the style of the candlestick plot
-    style = mpf.make_mpf_style(base_mpf_style='classic')
-
-    # Convert the data to a pandas DataFrame with the required columns
-    df = pd.DataFrame(data, columns=['Date', 'Open', 'High', 'Low', 'Close', 'Volume'])
-    df['Date'] = pd.to_datetime(df['Date'])
-    df.set_index('Date', inplace=True)
-
-    # Plot the candlestick chart
-    mpf.plot(df, type='candle', style=style)
-
+# Define a function to see relation between volume and price
+def plot_org_data(data):
     
-    
+    # Initialize the MinMaxScaler
+    vol_scaler = MinMaxScaler(feature_range=(0.1, 2.5))
+
+    # Reshape the volume data to a 2D array
+    volume_data = data['Volume'].values.reshape(-1, 1)
+
+    # Scale the volume data
+    scaled_volume = vol_scaler.fit_transform(volume_data)
+
+    # Update the 'Volume' column in the DataFrame with the scaled values
+    scaled_vol = scaled_volume.flatten()
+
+    # Create a scatter trace with volume as the marker size
+    trace = go.Scatter(
+        x=data.index,
+        y=data['Close'],
+        mode='lines+markers',
+        marker=dict(
+            size=scaled_vol,
+            sizemode='diameter',
+            sizeref=0.1,
+            sizemin=1,
+            color=data['Volume'],
+            colorscale='redor',
+            showscale=True
+        ),
+        line=dict(color='#000000'),
+        text=data['Volume'],
+        hovertemplate='Volume: %{text}<br>Price: %{y:.2f}<extra></extra>',
+    )
+
+    # Create a layout object
+    layout = go.Layout(
+        legend_orientation="h",
+        legend=dict(x=.5, xanchor="center"),
+        plot_bgcolor='#FFFFFF',  
+        title = "Volume for stock price for past year",
+        xaxis=dict(gridcolor = 'lightgrey', 
+                   type='date', 
+                   tickmode='auto', 
+                   tickformat='%d-%m-%Y', 
+                   showgrid=True),
+        yaxis=dict(gridcolor = 'lightgrey'),
+        xaxis_title="Date",
+        yaxis_title="Price",
+        margin=dict(l=0, r=0, t=30, b=0),
+        xaxis_rangeslider_visible=True
+    )
+
+    # Create a figure object that contains the trace and layout
+    fig = go.Figure(data=[trace], layout=layout)
+
+    # Display the figure
+    st.plotly_chart(fig)
+
+
+
+# Plot entire historical data
+def plot_hist_data(data):
+
+    # Create a scatter trace
+    trace = go.Scatter(
+        x=data.index,
+        y=data['Close'],
+        mode='lines'
+    )
+
+    # Create a layout object
+    layout = go.Layout(
+        legend_orientation="h",
+        legend=dict(x=.5, xanchor="center"),
+        plot_bgcolor='#FFFFFF',
+        title='Entire Historical Data',
+        xaxis=dict(gridcolor = 'lightgrey', 
+                                 type='date', 
+                                 tickmode='auto', 
+                                 tickformat='%d-%m-%Y', 
+                                 showgrid=True),
+        yaxis=dict(gridcolor = 'lightgrey'),
+        xaxis_title="Date",
+        yaxis_title="Price",
+        margin=dict(l=0, r=0, t=30, b=0),
+        xaxis_rangeslider_visible=True
+    )
+
+    # Create a figure object that contains the trace and layout
+    fig = go.Figure(data=[trace], layout=layout)
+
+    # Display the figure
+    st.plotly_chart(fig)
+
+
+
     
 # GETTING THE FINAL FORECAST
 
 def get_forecast(hist, validation_days = 90, days_to_forecast = 30):
 
+    # Plotting the historical data
+    
+    
     # Getting the latest date from the dataframe
     last_day = hist.index[-1]
     first_day = last_day - relativedelta(years = 2)
 
+    first_eda_day = last_day - relativedelta(years = 1)
+
+    eda_df = hist.loc[first_eda_day:last_day, :]
+
+
+    st.header("Exploring the data...")
+
+    # Plot entire historical data
+    plot_hist_data(hist)
     
+    # Plot Price by Volume
+    plot_org_data(eda_df)
+    
+    # Plot candelstick plot for the last year
+    plot_candlestick(eda_df)
 
     # Calculate and plot RSI using the close price
-    plot_rsi(hist)
+    plot_rsi(eda_df)
 
     # Calculate and plot MACD using the close price and a window of 14 periods
-    plot_macd(hist)
+    plot_macd(eda_df)
 
     # Getting the last training day based on the passed valudation days
     last_train_day = last_day - relativedelta(days = validation_days)
@@ -390,7 +622,8 @@ def get_forecast(hist, validation_days = 90, days_to_forecast = 30):
     print("MCMC predictions",fc_mcmc)
 
     forecasted_price=(fc_arima['fc'] + fc_lstm['fc'] + fc_mcmc['fc'])/3
-    
+    st.write("---")
+    st.header("Forecasting Data for the next month...")
     
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=all_days.index, y=all_days.values, mode='lines+markers', name='Historical Prices'))
@@ -401,7 +634,11 @@ def get_forecast(hist, validation_days = 90, days_to_forecast = 30):
                       legend_orientation="h",
                       legend=dict(x=.5, xanchor="center"),
                       plot_bgcolor='#FFFFFF',  
-                      xaxis=dict(gridcolor = 'lightgrey', type='date', tickmode='auto', tickformat='%d-%m-%Y', showgrid=True),
+                      xaxis=dict(gridcolor = 'lightgrey', 
+                                 type='date', 
+                                 tickmode='auto', 
+                                 tickformat='%d-%m-%Y', 
+                                 showgrid=True),
                       yaxis=dict(gridcolor = 'lightgrey'),
                       xaxis_title="Time",
                       yaxis_title="Stock price",
@@ -410,18 +647,39 @@ def get_forecast(hist, validation_days = 90, days_to_forecast = 30):
     # fig.show()
     st.plotly_chart(fig)
 
-    forecasted_price = pd.DataFrame({'Date':fc_arima.index.strftime('%d-%m-%Y'), 'Forecasted Price':forecasted_price.astype(int)})
+    forecasted_price = pd.DataFrame({'Date':fc_arima.index.strftime('%d-%m-%Y'), 
+                                     'Forecasted Price':forecasted_price.astype(int)})
     forecasted_price.set_index('Date', inplace = True)
+    forecasted_price.rename_axis(None, inplace = True)
 
-
+    st.write("---")
+    st.write("Actual Forecast Prices...")
+    # Display the centered DataFrame
+    display_centered_dataframe(forecasted_price)
     
-    st.write(forecasted_price.style.set_properties(**{'text-align': 'center'}))
-
 
 
 # STREAMLIT CODE
 
 import streamlit as st
+
+def display_centered_dataframe(dataframe):
+    # Apply CSS styling to center-align the table
+    centered_html = f'<div style="display: flex; justify-content: center;">{dataframe.to_html()}</div>'
+    # Display the centered DataFrame using Streamlit
+    st.markdown(centered_html, unsafe_allow_html=True)
+
+def display_ticker_news(ticker):
+    # Fetch news articles using yfinance
+    news = ticker.news
+    # Display news articles in Streamlit
+    st.subheader(f"Latest News Articles for {ticker.info['longName']}")
+    for article in news:
+        st.markdown(f"**[{article['title']}]({article['link']})**")
+        st.write(f"At {datetime.datetime.fromtimestamp(article['providerPublishTime'])")
+        st.write(f"Source: {article['publisher']}")
+        st.write('   ')
+
 
 st.set_page_config(page_title="Forecasting", page_icon="📈")
 
@@ -440,3 +698,5 @@ if symbol:
     else:
         with st.spinner("Calculating forecast..."):
             get_forecast(hist)
+            st.write("---")
+            display_ticker_news(stock)

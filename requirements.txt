@@ -13,4 +13,3 @@ pmdarima
 selenium
 bs4
 tensorflow
-mplfinance
