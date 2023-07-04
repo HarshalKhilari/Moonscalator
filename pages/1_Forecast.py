@@ -280,6 +280,66 @@ def MCMC_model(y_train, y_test, forecast_days):
 
 
 
+# Plot Relative Strength Index
+def calculate_rsi(data, window=14):
+    # Input: stock data, window
+    # output: RSI
+    # Function to calculate RSI using historical closing prices of a stock
+    close_delta = data['Close'].diff()
+    up = close_delta.where(close_delta > 0, 0)
+    down = -close_delta.where(close_delta < 0, 0)
+
+    # Calculate the average gains and losses
+    avg_gain = up.rolling(window).mean()
+    avg_loss = down.rolling(window).mean()
+
+    # Calculate the relative strength (RS)
+    rs = avg_gain / avg_loss
+
+    # Calculate the RSI
+    rsi = 100 - (100 / (1 + rs))
+    
+    return rsi
+
+
+# Define a function to calculate MACD
+def calculate_macd(data, short_period=12, long_period=26, signal_period=9):
+    # Calculate the short-term EMA
+    ema_short = data['Close'].ewm(span=short_period, adjust=False).mean()
+
+    # Calculate the long-term EMA
+    ema_long = data['Close'].ewm(span=long_period, adjust=False).mean()
+
+    # Calculate the MACD line
+    macd_line = ema_short - ema_long
+
+    # Calculate the signal line
+    signal_line = macd_line.ewm(span=signal_period, adjust=False).mean()
+
+    # Calculate the MACD histogram
+    macd_histogram = macd_line - signal_line
+
+    return macd_histogram
+
+
+
+
+import mplfinance as mpf
+
+def plot_candlestick(data):
+    # Define the style of the candlestick plot
+    style = mpf.make_mpf_style(base_mpf_style='classic')
+
+    # Convert the data to a pandas DataFrame with the required columns
+    df = pd.DataFrame(data, columns=['Date', 'Open', 'High', 'Low', 'Close', 'Volume'])
+    df['Date'] = pd.to_datetime(df['Date'])
+    df.set_index('Date', inplace=True)
+
+    # Plot the candlestick chart
+    mpf.plot(df, type='candle', style=style)
+
+    
+    
     
 # GETTING THE FINAL FORECAST
 
@@ -288,6 +348,14 @@ def get_forecast(hist, validation_days = 90, days_to_forecast = 30):
     # Getting the latest date from the dataframe
     last_day = hist.index[-1]
     first_day = last_day - relativedelta(years = 2)
+
+    
+
+    # Calculate and plot RSI using the close price
+    plot_rsi(hist)
+
+    # Calculate and plot MACD using the close price and a window of 14 periods
+    plot_macd(hist)
 
     # Getting the last training day based on the passed valudation days
     last_train_day = last_day - relativedelta(days = validation_days)
