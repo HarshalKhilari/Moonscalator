@@ -676,7 +676,7 @@ def display_ticker_news(ticker):
     st.subheader(f"Latest News Articles for {ticker.info['longName']}")
     for article in news:
         st.markdown(f"**[{article['title']}]({article['link']})**")
-        st.write(f"At {datetime.datetime.fromtimestamp(article['providerPublishTime'])")
+        st.write(f"At {datetime.datetime.fromtimestamp(article['providerPublishTime'])}")
         st.write(f"Source: {article['publisher']}")
         st.write('   ')
 
