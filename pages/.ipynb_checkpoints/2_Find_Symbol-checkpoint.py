@@ -73,7 +73,8 @@ def search_symbols(search_str):
         exchange_list.append(exchange_name) # Add exchange name to exchange name list
 
     # Create a dataframe for the symbols, company names, and exchanges
-    possible_symbols = pd.DataFrame({'Symbol':symbol_list, 'Company':company_name_list, 'Exchange':exchange_list}, index=range(1, len(symbol_list)+1))
+    possible_symbols = pd.DataFrame({'Symbol':symbol_list, 'Company':company_name_list, 'Exchange':exchange_list}, 
+                                    index=range(1, len(symbol_list)+1))
 
     # If a company name is suggested by not listed (i.e. it is private), an empty data frame will be created
     # If an empty dataframe is created, we print the time taken by the function and return a message that no stocks were found
@@ -84,6 +85,10 @@ def search_symbols(search_str):
     print(f"Getting these suggestions took {time.time() - start_time} seconds")
     return possible_symbols
 
+
+
+# Streamlit code 
+
 import streamlit as st
 
 st.set_page_config(page_title="Finding Ticker Symbol", page_icon="🔍")
@@ -91,7 +96,7 @@ st.set_page_config(page_title="Finding Ticker Symbol", page_icon="🔍")
 st.sidebar.header("Find Ticker Symbol")
 
 st.title("What's my Ticker?!")
-stock_name = st.text_input(label="Enter the stock name:", key="stock_name")
+stock_name = st.text_input(label="Enter the stock name", placeholder = "Enter the stock name here...", key="stock_name", label_visibility = 'collapsed')
 if stock_name:
     with st.spinner("Searching for symbols..."):
         suggestions = search_symbols(stock_name)

@@ -203,6 +203,7 @@ def lstm_model(y_train, y_test, forecast_days):
 # METROPOLIS HASTINGS ALGORITHM (MARKOV CHAIN MONTE CARLO) 
 
 mu, sig, N = 0.25, 0.5, 10000
+
 def q(x):
     return (1 / (math.sqrt(2 * math.pi * sig ** 2))) * (math.e ** (-((x - mu) ** 2) / (2 * sig ** 2)))
 
@@ -283,9 +284,8 @@ def MCMC_model(y_train, y_test, forecast_days):
 
 # EXPLORING DATA THROUGH PLOTS
 
-
+# Candlestick plot
 def plot_candlestick(data):
-
     # Create a candlestick trace
     trace = go.Candlestick(
         x=data.index,
@@ -294,8 +294,6 @@ def plot_candlestick(data):
         low=data['Low'],
         close=data['Close']
     )
-
-
     # Create a layout object
     layout = go.Layout(
         legend_orientation="h",
@@ -313,14 +311,10 @@ def plot_candlestick(data):
         margin=dict(l=0, r=0, t=30, b=0),
         xaxis_rangeslider_visible=True
     )       
-
-
     # Create a figure object that contains the trace and layout
     fig = go.Figure(data=[trace], layout=layout)
-
     # Display the figure
     st.plotly_chart(fig)    
-
 
     
 # Plot Relative Strength Index
@@ -328,22 +322,17 @@ def plot_rsi(data, window=14):
     # Input: stock data, window
     # output: RSI
     # Function to calculate RSI using historical closing prices of a stock
-    
     close_delta = data['Close'].diff()
     up = close_delta.where(close_delta > 0, 0)
     down = -close_delta.where(close_delta < 0, 0)
-
     # Calculate the average gains and losses
     avg_gain = up.rolling(window).mean()
     avg_loss = down.rolling(window).mean()
-
     # Calculate the relative strength (RS)
     rs = avg_gain / avg_loss
-
     # Calculate the RSI
     rsi = 100 - (100 / (1 + rs))
-
-     # Create traces for the dotted lines at RSI 30 and 70
+    # Create traces for the dotted lines at RSI 30 and 70
     trace_rsi_30 = go.Scatter(
         x=data.index,
         y=[30] * data.shape[0],
@@ -351,7 +340,6 @@ def plot_rsi(data, window=14):
         line=dict(color='green', dash='dash'),
         name='OVERSOLD'
     )
-
     trace_rsi_70 = go.Scatter(
         x=data.index,
         y=[70] * data.shape[0],
@@ -359,16 +347,13 @@ def plot_rsi(data, window=14):
         line=dict(color='red', dash='dash'),
         name='OVERBOUGHT'
     )
-    
-        # Create a scatter trace for the RSI values
+    # Create a scatter trace for the RSI values
     trace = go.Scatter(
         x=data.index,
         y=rsi,
         mode='lines',
         name='RSI'
     )
-
-
     # Create a layout object
     layout = go.Layout(
         plot_bgcolor='#FFFFFF',  
@@ -384,32 +369,23 @@ def plot_rsi(data, window=14):
         margin=dict(l=0, r=0, t=30, b=0),
         xaxis_rangeslider_visible=True
     )        
-
     # Create a figure object that contains the trace and layout
     fig = go.Figure(data=[trace, trace_rsi_30, trace_rsi_70], layout=layout)
-
     # Display the figure
     st.plotly_chart(fig)
 
-
 # Define a function to calculate MACD
 def plot_macd(data, short_period=12, long_period=26, signal_period=9):
-    
     # Calculate the short-term EMA
     ema_short = data['Close'].ewm(span=short_period, adjust=False).mean()
-
     # Calculate the long-term EMA
     ema_long = data['Close'].ewm(span=long_period, adjust=False).mean()
-
     # Calculate the MACD line
     macd_line = ema_short - ema_long
-
     # Calculate the signal line
     signal_line = macd_line.ewm(span=signal_period, adjust=False).mean()
-
     # Calculate the MACD histogram
     macd_histogram = macd_line - signal_line
-
     # Create trace for the MACD line
     trace_macd = go.Scatter(
         x=data.index,
@@ -417,7 +393,6 @@ def plot_macd(data, short_period=12, long_period=26, signal_period=9):
         mode='lines',
         name='MACD'
     )
-
     # Create trace for the MACD signal line
     trace_signal = go.Scatter(
         x=data.index,
@@ -425,7 +400,6 @@ def plot_macd(data, short_period=12, long_period=26, signal_period=9):
         mode='lines',
         name='Signal Line'
     )
-
     # Create trace for the MACD histogram
     trace_histogram = go.Bar(
         x=data.index,
@@ -433,8 +407,6 @@ def plot_macd(data, short_period=12, long_period=26, signal_period=9):
         name='Histogram',
         marker=dict(color=[('green' if val >= 0 else 'red') for val in macd_histogram])
     )
-
-
     # Create a layout object
     layout = go.Layout(
         plot_bgcolor='#FFFFFF',  
@@ -450,30 +422,21 @@ def plot_macd(data, short_period=12, long_period=26, signal_period=9):
         margin=dict(l=0, r=0, t=30, b=0),
         xaxis_rangeslider_visible=True
     )    
-
     # Create a figure object that contains the traces and layout
     fig = go.Figure(data=[trace_macd, trace_signal, trace_histogram], layout=layout)
-
     # Display the figure
     st.plotly_chart(fig)
 
-
-
 # Define a function to see relation between volume and price
 def plot_org_data(data):
-    
     # Initialize the MinMaxScaler
     vol_scaler = MinMaxScaler(feature_range=(0.1, 2.5))
-
     # Reshape the volume data to a 2D array
     volume_data = data['Volume'].values.reshape(-1, 1)
-
     # Scale the volume data
     scaled_volume = vol_scaler.fit_transform(volume_data)
-
     # Update the 'Volume' column in the DataFrame with the scaled values
     scaled_vol = scaled_volume.flatten()
-
     # Create a scatter trace with volume as the marker size
     trace = go.Scatter(
         x=data.index,
@@ -492,7 +455,6 @@ def plot_org_data(data):
         text=data['Volume'],
         hovertemplate='Volume: %{text}<br>Price: %{y:.2f}<extra></extra>',
     )
-
     # Create a layout object
     layout = go.Layout(
         legend_orientation="h",
@@ -510,25 +472,19 @@ def plot_org_data(data):
         margin=dict(l=0, r=0, t=30, b=0),
         xaxis_rangeslider_visible=True
     )
-
     # Create a figure object that contains the trace and layout
     fig = go.Figure(data=[trace], layout=layout)
-
     # Display the figure
     st.plotly_chart(fig)
 
-
-
 # Plot entire historical data
 def plot_hist_data(data):
-
     # Create a scatter trace
     trace = go.Scatter(
         x=data.index,
         y=data['Close'],
         mode='lines'
     )
-
     # Create a layout object
     layout = go.Layout(
         legend_orientation="h",
@@ -546,23 +502,17 @@ def plot_hist_data(data):
         margin=dict(l=0, r=0, t=30, b=0),
         xaxis_rangeslider_visible=True
     )
-
     # Create a figure object that contains the trace and layout
     fig = go.Figure(data=[trace], layout=layout)
-
     # Display the figure
     st.plotly_chart(fig)
 
 
 
-    
 # GETTING THE FINAL FORECAST
 
 def get_forecast(hist, validation_days = 90, days_to_forecast = 30):
 
-    # Plotting the historical data
-    
-    
     # Getting the latest date from the dataframe
     last_day = hist.index[-1]
     first_day = last_day - relativedelta(years = 2)
@@ -570,7 +520,6 @@ def get_forecast(hist, validation_days = 90, days_to_forecast = 30):
     first_eda_day = last_day - relativedelta(years = 1)
 
     eda_df = hist.loc[first_eda_day:last_day, :]
-
 
     st.header("Exploring the data...")
 
@@ -617,9 +566,6 @@ def get_forecast(hist, validation_days = 90, days_to_forecast = 30):
     error_df = pd.DataFrame([errors_arima, errors_lstm, errors_mcmc], index = ['ARIMA', 'LSTM', 'MCMC'])
     
     print("Errors",error_df)
-    print("LSTM predictions",fc_lstm)
-    print("ARIMA predictions",fc_arima)
-    print("MCMC predictions",fc_mcmc)
 
     forecasted_price=(fc_arima['fc'] + fc_lstm['fc'] + fc_mcmc['fc'])/3
     st.write("---")

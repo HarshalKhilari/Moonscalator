@@ -73,7 +73,8 @@ def search_symbols(search_str):
         exchange_list.append(exchange_name) # Add exchange name to exchange name list
 
     # Create a dataframe for the symbols, company names, and exchanges
-    possible_symbols = pd.DataFrame({'Symbol':symbol_list, 'Company':company_name_list, 'Exchange':exchange_list}, index=range(1, len(symbol_list)+1))
+    possible_symbols = pd.DataFrame({'Symbol':symbol_list, 'Company':company_name_list, 'Exchange':exchange_list}, 
+                                    index=range(1, len(symbol_list)+1))
 
     # If a company name is suggested by not listed (i.e. it is private), an empty data frame will be created
     # If an empty dataframe is created, we print the time taken by the function and return a message that no stocks were found
@@ -83,6 +84,10 @@ def search_symbols(search_str):
     # If dataframe is generated, print time taken by the function and return dataframe
     print(f"Getting these suggestions took {time.time() - start_time} seconds")
     return possible_symbols
+
+
+
+# Streamlit code 
 
 import streamlit as st
 
