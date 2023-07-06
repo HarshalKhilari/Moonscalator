@@ -1,7 +1,6 @@
 import os, sys, math, random, time, datetime
 import numpy as np
 import pandas as pd
-import mplfinance as mpf
 import yfinance as yf
 
 from requests import Session
