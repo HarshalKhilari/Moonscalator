@@ -9,4 +9,3 @@ Forecasting stock movement using a combination of ARIMA, LSTM, and MCMC models.
 Project by 
 - Mr. Harshal Manoj Khilari
 - Mr. Oliver Antony Priyan
-- Ms. Poonam Kapse

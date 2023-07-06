@@ -25,7 +25,6 @@ st.markdown(
 
     App created by :  
     -> **Mr. Harshal Manoj Khilari**  
-    -> **Mr. Oliver Antony Priyan**  
-    -> **Ms. Poonam Kapse**  
+    -> **Mr. Oliver Antony Priyan**   
 """
 )
