@@ -31,7 +31,7 @@ def search_symbols(search_str):
     driver.get(url) # Launching URL
 
     # Find search box and enter search string
-    driver.find_element(By.ID, "yfin-usr-qry").send_keys(search_str)
+    driver.find_element(By.ID, "ybar-sbq").send_keys(search_str)
 
     # Creating an explicit wait object to wait for 5 seconds
     wait = WebDriverWait(driver, 5)
